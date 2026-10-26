@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Lecteur</title>
 <!--
-  Lecteur vidéo minimal : ?v=<identifiant YouTube de 11 caractères>.
+  Lecteur vidéo minimal : ?v=<identifiant YouTube de 11 caractères>[&mute=1][&loop=1][&ctrl=0].
   Sert à afficher des vidéos YouTube depuis une page ouverte en fichier local (le projecteur), que YouTube refuse
   d'intégrer directement (erreur 153 : pas d'adresse d'origine). Relaie les messages de l'API du lecteur
   (lecture / pause / état) entre la page qui l'affiche et YouTube. Aucune donnée, aucun suivi.
@@ -22,14 +22,16 @@
 <div class="msg">Chargement…</div>
 <script>
   (function () {
-    var id = new URLSearchParams(location.search).get("v") || "";
+    var P = new URLSearchParams(location.search), id = P.get("v") || "";
     if (!/^[A-Za-z0-9_-]{11}$/.test(id)) { document.body.innerHTML = '<div class="msg">Vidéo introuvable.</div>'; return; }
     var f = document.createElement("iframe");
     f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; fullscreen");
     f.setAttribute("allowfullscreen", "");
     f.referrerPolicy = "strict-origin-when-cross-origin";
     f.title = "Vidéo";
-    f.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=" + encodeURIComponent(location.origin);
+    /* options : mute=1 (son coupé), loop=1 (en boucle), ctrl=0 (sans boutons : scènes d'ambiance) */
+    var opt = (P.get("mute") === "1" ? "&mute=1" : "") + (P.get("loop") === "1" ? "&loop=1&playlist=" + id : "") + (P.get("ctrl") === "0" ? "&controls=0&disablekb=1&iv_load_policy=3&fs=0" : "");
+    f.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1" + opt + "&origin=" + encodeURIComponent(location.origin);
     document.body.innerHTML = "";
     document.body.appendChild(f);
     /* relais : page parente -> YouTube (commandes), YouTube -> page parente (état du lecteur) */
