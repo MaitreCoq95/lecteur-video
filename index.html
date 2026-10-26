@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex, nofollow">
+<title>Lecteur</title>
+<!--
+  Lecteur vidéo minimal : ?v=<identifiant YouTube de 11 caractères>.
+  Sert à afficher des vidéos YouTube depuis une page ouverte en fichier local (le projecteur), que YouTube refuse
+  d'intégrer directement (erreur 153 : pas d'adresse d'origine). Relaie les messages de l'API du lecteur
+  (lecture / pause / état) entre la page qui l'affiche et YouTube. Aucune donnée, aucun suivi.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  iframe { border: 0; width: 100%; height: 100%; display: block; }
+  .msg { color: #bbb; font: 600 18px/1.4 -apple-system, Roboto, Arial, sans-serif; height: 100%; display: grid; place-items: center; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+<div class="msg">Chargement…</div>
+<script>
+  (function () {
+    var id = new URLSearchParams(location.search).get("v") || "";
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id)) { document.body.innerHTML = '<div class="msg">Vidéo introuvable.</div>'; return; }
+    var f = document.createElement("iframe");
+    f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; fullscreen");
+    f.setAttribute("allowfullscreen", "");
+    f.referrerPolicy = "strict-origin-when-cross-origin";
+    f.title = "Vidéo";
+    f.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=" + encodeURIComponent(location.origin);
+    document.body.innerHTML = "";
+    document.body.appendChild(f);
+    /* relais : page parente -> YouTube (commandes), YouTube -> page parente (état du lecteur) */
+    window.addEventListener("message", function (e) {
+      if (e.source === f.contentWindow) { if (window.parent !== window) window.parent.postMessage(e.data, "*"); }
+      else if (e.source === window.parent && f.contentWindow) { f.contentWindow.postMessage(e.data, "*"); }
+    });
+  })();
+</script>
+</body>
+</html>
